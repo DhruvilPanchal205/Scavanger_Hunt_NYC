@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Village Time Capsule — Interactive Hunt Sample</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Special+Elite&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EDE6D3;
+    --paper-2:#E4DAC0;
+    --ink:#232A2E;
+    --ink-soft:#565E56;
+    --brass:#A9834B;
+    --brass-dark:#7C5E32;
+    --rust:#9C4A34;
+    --sage:#5E6B4C;
+    --line:#C9BD9E;
+    --ok:#4C6B3F;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:48px 24px 100px;}
+  header{text-align:center;margin-bottom:36px;}
+  .eyebrow{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:12px;letter-spacing:3px;
+    color:var(--brass-dark);text-transform:uppercase;margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:700;font-size:44px;line-height:1.1;
+    margin:0 0 12px;color:var(--ink);
+  }
+  .sub{
+    font-family:'Special Elite',monospace;font-size:15px;color:var(--ink-soft);
+    max-width:480px;margin:0 auto;line-height:1.6;
+  }
+  .byline{
+    margin-top:18px;font-size:12.5px;color:var(--brass-dark);
+    font-family:'Inter',sans-serif;font-weight:500;
+  }
+
+  /* Progress stamps */
+  .stamps{
+    display:flex;justify-content:center;gap:10px;margin:34px 0 40px;flex-wrap:wrap;
+  }
+  .stamp{
+    width:52px;height:52px;border-radius:50%;
+    border:2px dashed var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Special Elite',monospace;font-size:13px;color:var(--ink-soft);
+    transition:transform .3s ease, border-color .3s ease, color .3s ease;
+    position:relative;
+  }
+  .stamp.done{
+    border:2px solid var(--rust);color:var(--rust);
+    transform:rotate(-8deg) scale(1.05);
+    font-weight:700;
+  }
+  .stamp.done::after{
+    content:"";position:absolute;inset:-6px;border:1px solid var(--rust);border-radius:50%;opacity:.35;
+  }
+
+  /* Cards */
+  .card{
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:28px 26px;
+    margin-bottom:22px;
+    position:relative;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;background:var(--brass);border-radius:2px;
+  }
+  .stop-head{
+    display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap;
+  }
+  .stop-tag{
+    font-family:'Inter',sans-serif;font-weight:700;font-size:11px;letter-spacing:2px;
+    color:var(--rust);text-transform:uppercase;
+  }
+  .stop-loc{
+    font-family:'Fraunces',serif;font-weight:600;font-size:19px;color:var(--ink);
+  }
+  .stop-type{
+    font-family:'Inter',sans-serif;font-size:12px;color:var(--ink-soft);
+    background:var(--paper);border:1px solid var(--line);padding:2px 8px;border-radius:20px;
+  }
+  .clue{
+    font-family:'Special Elite',monospace;font-size:16px;line-height:1.65;color:var(--ink);
+    margin:14px 0 20px;
+  }
+  .puzzle-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+  input[type=text], input[type=number]{
+    font-family:'Inter',sans-serif;font-size:14px;
+    padding:10px 12px;border:1px solid var(--line);border-radius:4px;
+    background:var(--paper);color:var(--ink);min-width:160px;
+  }
+  input[type=text]:focus, input[type=number]:focus, input[type=range]:focus{
+    outline:2px solid var(--brass);outline-offset:1px;
+  }
+  button{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
+    padding:10px 18px;border-radius:4px;border:1px solid var(--ink);
+    background:var(--ink);color:var(--paper);cursor:pointer;
+    transition:transform .12s ease;
+  }
+  button:hover{transform:translateY(-1px)}
+  button:active{transform:translateY(0)}
+  button.secondary{
+    background:transparent;color:var(--ink);border:1px solid var(--line);
+  }
+  .feedback{
+    font-family:'Inter',sans-serif;font-size:13.5px;margin-top:10px;min-height:18px;
+  }
+  .feedback.err{color:var(--rust)}
+  .feedback.ok{color:var(--ok)}
+  .shake{animation:shake .35s;}
+  @keyframes shake{
+    10%,90%{transform:translateX(-2px)}
+    20%,80%{transform:translateX(3px)}
+    30%,50%,70%{transform:translateX(-5px)}
+    40%,60%{transform:translateX(5px)}
+  }
+  .hidden{display:none}
+  .locked{opacity:.35;filter:grayscale(0.3);pointer-events:none;}
+  .cipher-preview{
+    font-family:'Special Elite',monospace;font-size:15px;color:var(--brass-dark);
+    background:var(--paper);border:1px dashed var(--line);padding:10px 12px;border-radius:4px;
+    margin:10px 0;min-height:20px;
+  }
+  .range-label{font-family:'Inter',sans-serif;font-size:12.5px;color:var(--ink-soft)}
+  .choices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .choice{
+    font-family:'Inter',sans-serif;font-size:13.5px;padding:8px 14px;border-radius:20px;
+    border:1px solid var(--line);background:var(--paper);cursor:pointer;
+  }
+  .choice.selected{border-color:var(--ink);background:var(--ink);color:var(--paper);}
+  .photo-check{display:flex;align-items:center;gap:8px;font-family:'Inter',sans-serif;font-size:13.5px;color:var(--ink-soft);margin:8px 0 14px;}
+
+  /* Finale lock */
+  .lock-card{
+    background:var(--ink);color:var(--paper);border-radius:6px;padding:32px 26px;text-align:center;
+  }
+  .lock-title{font-family:'Fraunces',serif;font-size:22px;margin:0 0 6px;}
+  .lock-sub{font-family:'Special Elite',monospace;font-size:14px;color:#C9C2AD;margin-bottom:22px;}
+  .lock-boxes{display:flex;justify-content:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;}
+  .lock-boxes input{
+    width:64px;text-align:center;font-family:'Fraunces',serif;font-size:22px;font-weight:700;
+    padding:12px 0;background:#31393D;border:1px solid #5A6165;color:var(--paper);border-radius:4px;text-transform:uppercase;
+  }
+  .capsule{
+    margin-top:22px;padding:20px;border-radius:6px;background:#31393D;border:1px solid var(--brass);
+    display:none;
+  }
+  .capsule.show{display:block;}
+  .capsule p{font-family:'Special Elite',monospace;font-size:14.5px;line-height:1.7;color:var(--paper);margin:0 0 12px;}
+  .capsule .cta{
+    display:inline-block;margin-top:6px;background:var(--brass);color:var(--ink);border:none;
+    padding:11px 20px;border-radius:4px;font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;text-decoration:none;cursor:pointer;
+  }
+
+  footer{
+    margin-top:48px;text-align:center;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink-soft);
+    border-top:1px dashed var(--line);padding-top:20px;
+  }
+
+  @media (max-width:520px){
+    h1{font-size:32px}
+    .lock-boxes input{width:52px;font-size:18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Interactive hunt sample</div>
+    <h1>The Village Time Capsule</h1>
+    <p class="sub">A five-stop scavenger hunt through Greenwich Village. Solve each clue to unlock the next — reach the finale and crack the code.</p>
+    <div class="byline">Designed &amp; hosted by [Your Name] · Sample built for the Scavenger Hunt Event Host application</div>
+  </header>
+
+  <div class="stamps" id="stamps">
+    <div class="stamp" data-stamp="start">S</div>
+    <div class="stamp" data-stamp="1">1</div>
+    <div class="stamp" data-stamp="2">2</div>
+    <div class="stamp" data-stamp="3">3</div>
+    <div class="stamp" data-stamp="4">4</div>
+    <div class="stamp" data-stamp="finale">F</div>
+  </div>
+
+  <!-- START -->
+  <div class="card" id="stop-start">
+    <div class="stop-head">
+      <span class="stop-tag">Start</span>
+      <span class="stop-loc">Washington Square Arch</span>
+    </div>
+    <p class="clue">"Somewhere in this Village, decades ago, a time capsule was buried and its map torn into five pieces. Find them all, and you'll open what history left behind."</p>
+    <button onclick="beginHunt()">Begin the hunt →</button>
+  </div>
+
+  <!-- STOP 1 -->
+  <div class="card locked" id="stop-1">
+    <div class="stop-head">
+      <span class="stop-tag">Stop 1</span>
+      <span class="stop-loc">Washington Square Fountain</span>
+      <span class="stop-type">anagram</span>
+    </div>
+    <p class="clue">"Water dances in a ring, chasing letters as they spring: H&nbsp;C&nbsp;R&nbsp;A&nbsp;E&nbsp;S. Unscramble what the fountain hides, then walk toward the street where laughter resides."</p>
+    <div class="puzzle-row">
+      <input type="text" id="answer1" placeholder="Type the unscrambled word">
+      <button onclick="checkStop1()">Check</button>
+    </div>
+    <div class="feedback" id="feedback1"></div>
+  </div>
+
+  <!-- STOP 2 -->
+  <div class="card locked" id="stop-2">
+    <div class="stop-head">
+      <span class="stop-tag">Stop 2</span>
+      <span class="stop-loc">MacDougal Street</span>
+      <span class="stop-type">cipher</span>
+    </div>
+    <p class="clue">"Wkh odxjkv olyh khuh." Every letter has been shifted forward through the alphabet. Turn the dial until it reads true.</p>
+    <div class="puzzle-row">
+      <span class="range-label">Shift back</span>
+      <input type="range" id="shift" min="0" max="25" value="0" oninput="updateCipher()">
+      <span class="range-label" id="shiftVal">0</span>
+    </div>
+    <div class="cipher-preview" id="cipherPreview">wkh odxjkv olyh khuh</div>
+    <div class="puzzle-row">
+      <button onclick="checkStop2()">Lock in this shift</button>
+    </div>
+    <div class="feedback" id="feedback2"></div>
+  </div>
+
+  <!-- STOP 3 -->
+  <div class="card locked" id="stop-3">
+    <div class="stop-head">
+      <span class="stop-tag">Stop 3</span>
+      <span class="stop-loc">Judson Memorial Church</span>
+      <span class="stop-type">number puzzle</span>
+    </div>
+    <p class="clue">"Above the door, the year reads 1892. Add its digits together, then subtract the four columns you can count out front. What's left points you toward a monument of history."</p>
+    <div class="puzzle-row">
+      <input type="text" id="answer3" placeholder="Type the resulting number">
+      <button onclick="checkStop3()">Check</button>
+    </div>
+    <div class="feedback" id="feedback3"></div>
+  </div>
+
+  <!-- STOP 4 -->
+  <div class="card locked" id="stop-4">
+    <div class="stop-head">
+      <span class="stop-tag">Stop 4</span>
+      <span class="stop-loc">Stonewall National Monument</span>
+      <span class="stop-type">trivia + photo</span>
+    </div>
+    <p class="clue">"Name the year this place became a monument, then gather your team for a photo to prove you found this ground."</p>
+    <div class="choices" id="choices4">
+      <div class="choice" onclick="pick(this,'2016')">2016</div>
+      <div class="choice" onclick="pick(this,'2011')">2011</div>
+      <div class="choice" onclick="pick(this,'2019')">2019</div>
+    </div>
+    <label class="photo-check"><input type="checkbox" id="photoTaken"> Our team photo is taken</label>
+    <div class="puzzle-row">
+      <button onclick="checkStop4()">Check</button>
+    </div>
+    <div class="feedback" id="feedback4"></div>
+  </div>
+
+  <!-- FINALE -->
+  <div class="card locked" id="stop-finale">
+    <div class="lock-card">
+      <p class="lock-title">The Time Capsule</p>
+      <p class="lock-sub">"Fountain's word, church's number, monument's year — combine what you found to open what time has kept."</p>
+      <div class="lock-boxes">
+        <input type="text" maxlength="6" id="lockA" placeholder="word">
+        <input type="text" maxlength="3" id="lockB" placeholder="##">
+        <input type="text" maxlength="4" id="lockC" placeholder="year">
+      </div>
+      <button onclick="checkFinale()">Open the capsule</button>
+      <div class="feedback" id="feedbackFinale" style="color:#E8B57A"></div>
+
+      <div class="capsule" id="capsule">
+        <p>The capsule creaks open. Inside, a single note:</p>
+        <p>"Whoever solved this made it through five puzzles, three neighborhoods, and one very stubborn cipher — with patience, curiosity, and a little showmanship. Those are exactly the qualities I'd bring to hosting your hunts, week after week, group after group."</p>
+        <p>— [Your Name], Scavenger Hunt Event Host applicant</p>
+        <a class="cta" href="mailto:you@example.com">Let's talk →</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Portfolio sample · not an active public event · built to demonstrate hunt design, puzzle pacing, and host voice.
+  </footer>
+
+</div>
+
+<script>
+  const state = { s1:false, s2:false, s3:false, s4:false };
+  let choice4 = null;
+
+  function stampDone(id){
+    document.querySelector('.stamp[data-stamp="'+id+'"]').classList.add('done');
+  }
+  function unlock(id){
+    document.getElementById('stop-'+id).classList.remove('locked');
+    document.getElementById('stop-'+id).scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  function shake(el){
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  }
+
+  function beginHunt(){
+    stampDone('start');
+    unlock('1');
+  }
+
+  function checkStop1(){
+    const val = document.getElementById('answer1').value.trim().toUpperCase();
+    const fb = document.getElementById('feedback1');
+    if(val === 'SEARCH'){
+      fb.textContent = 'Correct — head toward MacDougal Street.';
+      fb.className = 'feedback ok';
+      state.s1 = true;
+      stampDone('1');
+      unlock('2');
+    } else {
+      fb.textContent = 'Not quite. Rearrange the six letters again.';
+      fb.className = 'feedback err';
+      shake(document.getElementById('stop-1'));
+    }
+  }
+
+  function updateCipher(){
+    const shift = parseInt(document.getElementById('shift').value,10);
+    document.getElementById('shiftVal').textContent = shift;
+    const src = "wkh odxjkv olyh khuh";
+    let out = '';
+    for(const ch of src){
+      if(/[a-z]/.test(ch)){
+        let code = ch.charCodeAt(0) - 97;
+        code = (code - shift + 26) % 26;
+        out += String.fromCharCode(code + 97);
+      } else out += ch;
+    }
+    document.getElementById('cipherPreview').textContent = out;
+  }
+
+  function checkStop2(){
+    const shift = parseInt(document.getElementById('shift').value,10);
+    const fb = document.getElementById('feedback2');
+    if(shift === 3){
+      fb.textContent = '"The laughs live here" — decoded. Next: Judson Memorial Church.';
+      fb.className = 'feedback ok';
+      state.s2 = true;
+      stampDone('2');
+      unlock('3');
+    } else {
+      fb.textContent = 'Close, but the message still looks scrambled. Try another shift.';
+      fb.className = 'feedback err';
+      shake(document.getElementById('stop-2'));
+    }
+  }
+
+  function checkStop3(){
+    const val = document.getElementById('answer3').value.trim();
+    const fb = document.getElementById('feedback3');
+    // 1+8+9+2 = 20, minus 4 columns = 16
+    if(val === '16'){
+      fb.textContent = 'Correct — 16 points you toward Stonewall.';
+      fb.className = 'feedback ok';
+      state.s3 = true;
+      stampDone('3');
+      unlock('4');
+    } else {
+      fb.textContent = 'Recount the digits and the columns — try again.';
+      fb.className = 'feedback err';
+      shake(document.getElementById('stop-3'));
+    }
+  }
+
+  function pick(el, val){
+    document.querySelectorAll('#choices4 .choice').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    choice4 = val;
+  }
+
+  function checkStop4(){
+    const fb = document.getElementById('feedback4');
+    const photo = document.getElementById('photoTaken').checked;
+    if(choice4 === '2016' && photo){
+      fb.textContent = 'Correct, and photo confirmed — you\'re ready for the finale.';
+      fb.className = 'feedback ok';
+      state.s4 = true;
+      stampDone('4');
+      unlock('finale');
+    } else if(choice4 !== '2016'){
+      fb.textContent = 'That\'s not the year — check again.';
+      fb.className = 'feedback err';
+      shake(document.getElementById('stop-4'));
+    } else {
+      fb.textContent = 'Don\'t forget the team photo before you move on.';
+      fb.className = 'feedback err';
+      shake(document.getElementById('stop-4'));
+    }
+  }
+
+  function checkFinale(){
+    const a = document.getElementById('lockA').value.trim().toUpperCase();
+    const b = document.getElementById('lockB').value.trim();
+    const c = document.getElementById('lockC').value.trim();
+    const fb = document.getElementById('feedbackFinale');
+    if(a === 'SEARCH' && b === '16' && c === '2016'){
+      fb.textContent = '';
+      stampDone('finale');
+      document.getElementById('capsule').classList.add('show');
+      document.getElementById('capsule').scrollIntoView({behavior:'smooth', block:'center'});
+    } else {
+      fb.textContent = 'Not quite the right combination — recheck your three answers above.';
+      shake(document.querySelector('.lock-card'));
+    }
+  }
+</script>
+</body>
+</html>
